@@ -1,0 +1,42 @@
+name: Create Test Repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        type: string
+        required: true
+        description: Name of the new repository
+      port_context:
+        type: string
+        required: true
+        description: Port context JSON (for PATCH_RUN)
+
+jobs:
+  create_repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create repo via GitHub API
+        run: |
+          curl -s -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+            https://api.github.com/orgs/${{ github.repository_owner }}/repos \
+            -d "{\"name\":\"${{ inputs.repo_name }}\"}"
+
+      - name: Extract runId from Port context
+        id: ctx
+        run: |
+          echo '${{ inputs.port_context }}' > port_context.json
+          echo "PORT_RUN_ID=$(jq -r '.runId' port_context.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Report SUCCESS to Port
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.getport.io
+          operation: PATCH_RUN
+          status: "SUCCESS"
+          runId: ${{ steps.ctx.outputs.PORT_RUN_ID }}
+          logMessage: "Created repo ${{ inputs.repo_name }}"
