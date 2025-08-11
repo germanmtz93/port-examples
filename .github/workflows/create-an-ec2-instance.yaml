@@ -93,7 +93,7 @@ jobs:
           operation: PATCH_RUN
           runId: ${{ fromJson(inputs.port_context).rund_id }}
           logMessage: |
-              EC2 Instance created successfully ✅
+                            EC2 Instance created successfully ✅
 
       - name: Report Created Instance to Port
         uses: port-labs/port-github-action@v1
